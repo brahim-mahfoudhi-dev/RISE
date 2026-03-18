@@ -1,0 +1,42 @@
+- name: Install Jenkins plugins
+  hosts: buildserver
+  become: true
+  vars_files:
+    - ../../vars/main.yml
+    - "{{ secrets_path }}"
+  vars:
+    jenkins_host: "{{ jenkins_host }}"
+    jenkins_port: "{{ jenkins_port }}"
+    jenkins_home: "{{ jenkins_home }}"
+  tasks:
+    - name: Install Jenkins plugins
+      jenkins_plugin:
+        name: "{{ item }}"
+        state: present
+        url: "http://{{ jenkins_host }}:{{ jenkins_port }}"
+        url_username: "{{ jenkins_username }}"
+        url_password: "{{ jenkins_password }}"
+        jenkins_home: "{{ jenkins_home }}"
+      with_items:
+        - blueocean
+        - Instance Identity
+        - github
+        - cloudbees-folder
+        - dashboard-view
+        - configuration-as-code
+        - build-timeout
+        - rebuild
+        - ssh-agent
+        - timestamper
+        - ws-cleanup
+        - github-repo
+        - ssh-slaves
+        - email-ext
+        - mailer
+        - workflow-aggregator
+        - Discord Notifier
+
+    - name: Restart Jenkins
+      systemd:
+        name: jenkins
+        state: restarted

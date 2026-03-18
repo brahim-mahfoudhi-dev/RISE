@@ -1,0 +1,19 @@
+# play.yml
+---
+
+# Import the SSH initialization tasks
+- import_playbook: playbooks/ssh/initialize_known_hosts.yml
+
+# Install software
+- import_playbook: playbooks/software/software_installation.yml
+
+# Install Portainer
+- import_playbook: playbooks/portainer/portainer_installation.yml
+
+# Deploy Jenkins container
+- import_playbook: playbooks/jenkins/deploy/deploy_jenkins_container.yml
+
+# Configure Jenkins
+- import_playbook: playbooks/jenkins/vault/setup_vault.yml
+- import_playbook: playbooks/jenkins/user/jenkins_admin_user.yml
+- import_playbook: playbooks/jenkins/setup/setup_jenkins.yml

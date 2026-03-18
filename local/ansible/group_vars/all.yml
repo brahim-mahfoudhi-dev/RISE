@@ -1,0 +1,30 @@
+# group_vars/all.yml
+# Variables visible to all nodes
+---
+
+# SSH-related variables
+ssh_path: "~/.ssh"
+known_hosts: "{{ ssh_path }}/known_hosts"  # Using ssh_path variable for known_hosts
+
+#----------------------------------------------------------------------------------
+
+# Docker installation
+docker_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - software-properties-common
+  - gnupg-agent
+
+# ---------------------------------------------------------------------------------
+
+portainer_image: "portainer/portainer-ce"
+portainer_tag: "latest"
+portainer_container_name: "portainer"
+portainer_restart_policy: "always"
+portainer_published_ports:
+  - "9000:9000"
+portainer_volumes:
+  - "/var/run/docker.sock:/var/run/docker.sock"
+  - "portainer_data:/data"
+portainer_data_volume_name: "portainer_data"

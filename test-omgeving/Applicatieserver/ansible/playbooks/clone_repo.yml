@@ -1,0 +1,27 @@
+---
+
+- name: Github repository
+  hosts: app
+  become: yes
+  tasks:
+    - name: Create a directory
+      file:
+        path: /vagrant/app
+        state: directory
+        mode: '0755'
+
+
+    - name: Clone repository
+      ansible.builtin.git:
+        repo: https://github.com/benc-uk/dotnet-demoapp.git
+        dest: /vagrant/app
+        version: master
+        update: yes
+        force: yes
+        
+    - name: Ensure repository is present
+      ansible.builtin.git:
+        repo: https://github.com/benc-uk/dotnet-demoapp.git
+        dest: /vagrant/app
+        version: master
+

@@ -1,0 +1,180 @@
+- name: Configure Jenkins User and SSH on Slave
+  hosts: app
+  become: yes
+  vars_files:
+    - ../../vars/main.yml
+    - "{{ secrets_path }}"
+    - "{{ SSH_SECRET_PATH }}"
+  vars:
+    known_hosts: "/var/lib/jenkins/.ssh/known_hosts"
+  tasks:
+    - name: Ensure jenkins user exists on the slave
+      ansible.builtin.user:
+        name: jenkins
+        state: present
+        shell: /bin/bash
+        create_home: yes
+        home: /var/lib/jenkins 
+
+    - name: Ensure the .ssh directory exists for jenkins user on the slave
+      ansible.builtin.file:
+        path: /var/lib/jenkins/.ssh
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0700'
+    
+    - name: Ensure authorized_keys file exists for jenkins user on the slave
+      ansible.builtin.file:
+        path: /var/lib/jenkins/.ssh/authorized_keys
+        state: touch
+        owner: jenkins
+        group: jenkins
+        mode: '0600'
+    
+    - name: Ensure known_hosts file exists
+      ansible.builtin.file:
+        path: "{{ known_hosts }}"
+        state: touch
+        owner: jenkins
+        mode: '0644'
+
+    - name: Retrieve SSH fingerprints from buildserver
+      command: "ssh-keyscan {{ jenkins_host }}"
+      register: host_keys
+      changed_when: host_keys.stdout != ""
+
+    - name: Add SSH fingerprints to known_hosts
+      lineinfile:
+        path: "{{ known_hosts }}"
+        line: "{{ item }}"
+        state: present
+        create: yes
+      loop: "{{ host_keys.stdout_lines }}"
+      when: host_keys.stdout != ""
+
+    - name: Copy SSH public key to Jenkins .ssh directory
+      copy:
+        src: /vagrant/ansible/playbooks/jenkins/files/ssh/id_rsa.pub
+        dest: /var/lib/jenkins/.ssh/id_rsa.pub
+        owner: jenkins
+        group: jenkins
+        mode: '0600'
+
+    - name: Scan and register Github fingerprints
+      command: "ssh-keyscan -t ed25519 github.com"
+      register: host_keys
+      become: yes
+
+    - name: Add Github fingerprints keys to jenkins known_hosts
+      lineinfile:
+        path: "/var/lib/jenkins/.ssh/known_hosts"
+        line: "{{ item }}"
+      with_items: "{{ host_keys.stdout_lines }}"
+      become: yes
+
+    - name: Ensure .ssh directory exists for vagrant
+      file:
+        path: "/home/vagrant/.ssh"
+        state: directory
+        mode: '0700'
+        owner: vagrant
+        group: vagrant
+
+    - name: Ensure known_hosts file exists for vagrant
+      file:
+        path: "/home/vagrant/.ssh/known_hosts"
+        state: touch
+        mode: '0644'
+        owner: vagrant
+        group: vagrant
+    
+    - name: Add Github fingerprints keys to known_hosts
+      lineinfile:
+        path: "/home/vagrant/.ssh/known_hosts"
+        line: "{{ item }}"
+      with_items: "{{ host_keys.stdout_lines }}"
+
+    - name: Read the public key from the file on the slave
+      slurp:
+        src: /var/lib/jenkins/.ssh/id_rsa.pub
+      register: public_key_content
+
+    - name: Add master's public key to authorized_keys on the slave
+      lineinfile:
+        path: /var/lib/jenkins/.ssh/authorized_keys
+        line: "{{ public_key_content.content | b64decode }}"
+        state: present
+        owner: jenkins  
+        group: jenkins
+        mode: '0600'
+
+
+- name: Configure SSH for Jenkins Agent Connection (Master to Slave)
+  hosts: buildserver
+  become: true
+  vars:
+    app_ip_address: 172.16.128.101
+    known_hosts: "/var/lib/jenkins/.ssh/known_hosts"
+
+  tasks:
+    - name: Ensure Jenkins SSH directory exists
+      ansible.builtin.file:
+        path: /var/lib/jenkins/.ssh
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0700'
+    
+    - name: Ensure jenkins user exists on the slave
+      ansible.builtin.user:
+        name: jenkins
+        state: present
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Ensure known_hosts file exists
+      ansible.builtin.file:
+        path: /var/lib/jenkins/.ssh/known_hosts
+        state: touch
+        owner: jenkins
+        group: jenkins
+        mode: '0600'
+
+    - name: Ensure known_hosts file exists
+      ansible.builtin.file:
+        path: "{{ known_hosts }}"
+        state: touch
+        owner: jenkins
+        mode: '0644'
+
+  #  - name: Retrieve SSH fingerprints from the managed nodes
+  #    command: "ssh-keyscan {{ app_ip_address }}"
+  #    register: host_keys
+  #    changed_when: host_keys.stdout != ""
+
+  #  - name: Add SSH fingerprints to known_hosts
+  #    lineinfile:
+  #      path: "{{ known_hosts }}"
+  #      line: "{{ item }}"
+  #      state: present
+  #      create: yes
+  #    loop: "{{ host_keys.stdout_lines }}"
+  #    when: host_keys.stdout != ""
+
+  #  - name: Ensure authorized_keys file exists for the Jenkins user
+  #    ansible.builtin.file:
+  #        path: /var/lib/jenkins/.ssh/authorized_keys
+  #      state: touch
+  #      owner: jenkins
+  #      group: jenkins
+  #      mode: '0600'
+    
+    - name: Copy SSH private key to Jenkins .ssh directory
+      copy:
+        src: /vagrant/ansible/playbooks/jenkins/files/ssh/id_rsa
+        dest: /var/lib/jenkins/.ssh/id_rsa
+        owner: jenkins
+        group: jenkins
+        mode: '0600'
+    

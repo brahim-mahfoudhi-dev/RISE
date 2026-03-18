@@ -1,0 +1,86 @@
+---
+- name: Install Jenkins
+  hosts: buildserver
+  become: yes
+  vars_files:
+    - ../../vars/main.yml
+  tasks:
+    - name: Add Jenkins GPG key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+
+    - name: Add Jenkins repository to sources list
+      apt_repository:
+        repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+        state: present
+
+    - name: Update APT cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade APT packages
+      apt:
+        upgrade: dist
+
+    - name: Install OpenJDK 17
+      ansible.builtin.apt:
+        name: openjdk-17-jdk
+        state: present
+      register: apt_result
+      notify:
+        - Wait for Java to be installed
+
+    - name: Install Jenkins
+      ansible.builtin.apt:
+        name:
+          - jenkins
+        state: present
+
+    - name: Ensure Jenkins is enabled and started
+      ansible.builtin.systemd:
+        name: jenkins
+        enabled: true
+        state: started
+      when: apt_result is succeeded  # Ensure Jenkins starts after Java is installed
+
+    - name: Set defaults for Jenkins
+      ansible.builtin.template:
+        src: ../files/jenkins_default
+        dest: /var/lib/jenkins/jenkins.install.UpgradeWizard.state
+
+    - name: Disable anonymous read access
+      lineinfile:
+        path: /var/lib/jenkins/config.xml
+        regexp: '<useSecurity>false</useSecurity>'
+        line: '<useSecurity>true</useSecurity>'
+        state: present
+        backup: yes
+
+    - name: Set denyAnonymousReadAccess to true
+      lineinfile:
+        path: /var/lib/jenkins/config.xml
+        regexp: '<denyAnonymousReadAccess>(false|true)</denyAnonymousReadAccess>'
+        line: '<denyAnonymousReadAccess>true</denyAnonymousReadAccess>'
+        state: present
+        backup: yes
+
+    - name: Restart Jenkins
+      ansible.builtin.systemd:
+        name: jenkins
+        state: restarted
+
+    - name: Wait for Jenkins to be available
+      wait_for:
+        host: localhost
+        port: 8080
+        delay: 10
+        timeout: 300
+        state: started
+
+  handlers:
+    - name: Wait for Java to be installed
+      ansible.builtin.wait_for:
+        path: /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+        state: file
+        timeout: 300  # Wait up to 5 minutes for Java to be installed

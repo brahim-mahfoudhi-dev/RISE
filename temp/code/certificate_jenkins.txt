@@ -1,0 +1,79 @@
+- name: Configure Jenkins in Docker with Let's Encrypt SSL
+  hosts: buildserver
+  become: yes
+  vars:
+    jenkins_domain: "jenkins.yourdomain.com"  # Replace with your actual domain
+    jenkins_data_volume: jenkins-data  # Docker volume for Jenkins data
+    keystore_password: "Drgnnrblnc19"  # Replace with your actual password
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - software-properties-common
+          - certbot
+          - openjdk-11-jdk
+        state: present
+        update_cache: yes
+
+    - name: Create SSL directory on the host
+      file:
+        path: /etc/ssl/jenkins
+        state: directory
+        mode: '0755'
+
+    - name: Obtain Let's Encrypt SSL certificate
+      command: >
+        certbot certonly --standalone --non-interactive --agree-tos
+        --email jenkins@server.com -d {{ jenkins_domain }}
+      register: certbot_result
+      changed_when: "'Successfully' in certbot_result.stdout"
+
+    - name: Copy the obtained certificate and private key to the SSL directory
+      copy:
+        src: "/etc/letsencrypt/live/{{ jenkins_domain }}/{{ item }}"
+        dest: "/etc/ssl/jenkins/"
+        mode: '0644'
+      loop:
+        - fullchain.pem
+        - privkey.pem
+
+    - name: Create a Java keystore
+      command: >
+        openssl pkcs12 -export -nodes -in /etc/ssl/jenkins/fullchain.pem
+        -inkey /etc/ssl/jenkins/privkey.pem -out /etc/ssl/jenkins/jenkins.p12
+        -name jenkins -passout pass:{{ keystore_password }}
+      args:
+        creates: /etc/ssl/jenkins/jenkins.p12
+
+    - name: Import PKCS12 into Java Keystore
+      command: >
+        keytool -importkeystore -srckeystore /etc/ssl/jenkins/jenkins.p12 
+        -srcstoretype PKCS12 -destkeystore /etc/ssl/jenkins/jenkins.jks 
+        -deststoretype JKS -srcstorepass {{ keystore_password }} -deststorepass {{ keystore_password }}
+      args:
+        creates: /etc/ssl/jenkins/jenkins.jks
+
+    - name: Update Jenkins Docker container with SSL configuration
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        restart_policy: unless-stopped
+        published_ports:
+          - "8443:8443"
+        volumes:
+          - /etc/ssl/jenkins:/etc/ssl/jenkins
+          - "{{ jenkins_data_volume }}:/var/jenkins_home:z"
+          - "{{ ansible_env.HOME }}/bin/docker:/usr/bin/docker"
+          - /var/run/docker.sock:/var/run/docker.sock
+          - "{{ ansible_env.HOME }}:/home"
+        user: "1000:1000"
+        command: >
+          java -Djenkins.install.runSetupWizard=false
+          -Djavax.net.ssl.keyStore=/etc/ssl/jenkins/jenkins.jks
+          -Djavax.net.ssl.keyStorePassword={{ keystore_password }}
+          -jar /usr/share/jenkins/jenkins.war
+          --httpPort=-1 --httpsPort=8443
+          --httpsKeyStore=/etc/ssl/jenkins/jenkins.jks
+          --httpsKeyStorePassword={{ keystore_password }}
+        state: started

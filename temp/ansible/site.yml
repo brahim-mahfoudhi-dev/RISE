@@ -1,0 +1,9 @@
+# site.yml
+---
+- hosts: all
+  roles:
+    - dockerlab
+  tasks:    
+    - debug:        
+        msg: "This is {{ ansible_hostname }} in group {{ my_group }}"
+  

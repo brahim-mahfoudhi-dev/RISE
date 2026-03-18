@@ -1,0 +1,58 @@
+---
+- name: Install Jenkins directly on the server
+  hosts: buildserver
+  become: yes
+  vars_files:
+    - ../../vars/main.yml
+  tasks:
+  - name: Install required dependencies
+    ansible.builtin.package:
+      name: 
+        - java-17-openjdk
+        - wget
+        - gnupg
+      state: present
+
+  - name: Add Jenkins repository key
+    ansible.builtin.apt_key:
+      url: https://pkg.jenkins.io/debian/jenkins.io.key
+      state: present
+
+  - name: Add Jenkins repository
+    ansible.builtin.apt_repository:
+      repo: 'deb http://pkg.jenkins.io/debian-stable binary/'
+      state: present
+
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: yes
+
+  - name: Install Jenkins
+    ansible.builtin.apt:
+      name: jenkins
+      state: present
+
+  - name: Ensure Jenkins is started and enabled on boot
+    ansible.builtin.service:
+      name: jenkins
+      state: started
+      enabled: yes
+
+  - name: Wait for Jenkins to be available
+    wait_for:
+      host: "{{ inventory_hostname }}"
+      port: "{{ jenkins_port }}"
+      delay: 10
+      timeout: 300
+      state: started
+
+
+        
+#    - name: Retrieve initial Jenkins password
+#      command: docker exec jenkins_server cat /var/jenkins_home/secrets/initialAdminPassword
+#      register: password
+
+#    - name: Show initial password
+#      debug:
+#        msg: "{{ password.stdout }}"
+

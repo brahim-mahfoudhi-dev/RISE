@@ -1,0 +1,51 @@
+# main.yml
+
+# Jenkins configuration variables
+jenkins_host: "172.16.128.100"
+jenkins_container_name: jenkins
+jenkins_image: jenkins/jenkins:lts
+jenkins_port: 8080
+jenkins_data_volume: jenkins-data
+jenkins_home: "/var/lib/jenkins"
+jenkins_plugin: "/var/lib/jenkins/plugins"
+jenkins_username: "jenkins"
+
+# Java options for Jenkins
+java_opts: "-Djenkins.install.runSetupWizard=false"
+
+# User
+secrets_path: /vagrant/ansible/playbooks/jenkins/files/users/secrets.yml
+groovy_path: /vagrant/ansible/playbooks/jenkins/files/users/security.groovy
+
+# Vault
+vault_path: /vagrant/ansible/playbooks/jenkins/files/users/vault.yml
+
+# Jenkins
+jenkins_url: "http://172.16.128.100:8080"
+
+# SSH-agent
+SSH_CREDENTIAL_DESCRIPTION: "Jenkins Master SSH Key"
+SSH_CREDENTIAL_ID: "jenkins-master-key"
+SSH_USERNAME: "jenkins"
+SSH_PRIVATE_KEY: "/vagrant/ansible/playbooks/jenkins/files/ssh/id_rsa"
+SSH_PUBLIC_KEY: "/vagrant/ansible/playbooks/jenkins/files/ssh/id_rsa.pub"
+SSH_SECRET_PATH: "/vagrant/ansible/playbooks/jenkins/files/ssh/ssh_secret.yml"
+GROOVY_SSH_PATH: "/vagrant/ansible/playbooks/jenkins/files/ssh/add_ssh_key.groovy"
+
+# Node
+node_name: "dotnet-app"
+node_ip: "172.16.128.101"
+jenkins_ssh_port: 22
+jenkins_credentials_id: "jenkins-master-key"
+groovy_node_path: "/vagrant/ansible/playbooks/jenkins/files/node/create-jenkins-node.groovy"
+
+# Pipeline
+pipeline_name: "dotnet_pipeline"
+config_acc_file: "/vagrant/ansible/playbooks/jenkins/files/pipeline/dotnet/acceptatie/config.xml"
+config_test_file: "/vagrant/ansible/playbooks/jenkins/files/pipeline/dotnet/productie/config.xml"
+
+# Auth path
+auth_path: "/vagrant/ansible/playbooks/jenkins/files/auth0/auth_config.yml"
+
+# SQL connection string path
+sql_path: "/vagrant/ansible/playbooks/jenkins/files/sql/sql_connection_string.yml"

@@ -1,0 +1,23 @@
+# main.yml
+
+# Jenkins configuration variables
+jenkins_host: "172.16.128.100"
+jenkins_container_name: jenkins
+jenkins_image: jenkins/jenkins:lts
+jenkins_port: 8080
+jenkins_data_volume: jenkins-data
+jenkins_home: "/var/jenkins_home"
+
+# Java options for Jenkins
+java_opts: "-Djenkins.install.runSetupWizard=false"
+
+# User
+secrets_path: /vagrant/ansible/playbooks/jenkins/files/secrets.yml
+
+groovy_path: /vagrant/ansible/playbooks/jenkins/files/security.groovy
+
+# Vault
+vault_path: /vagrant/ansible/playbooks/jenkins/files/vault.yml
+
+# Jenkins
+jenkins_url: "http://172.16.128.100:8080"

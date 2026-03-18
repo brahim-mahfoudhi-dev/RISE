@@ -1,0 +1,43 @@
+# play.yml
+---
+
+# Buildserver
+
+# import the SSH initialization tasks
+- import_playbook: playbooks/ssh/initialize_known_hosts.yml
+
+# Configure linode servers
+# - import_playbook: playbooks/server/config_server.yml
+
+# install Jenkins
+- import_playbook: playbooks/jenkins/install/install_jenkins.yml
+
+# user
+- import_playbook: playbooks/jenkins/user/jenkins_admin_user.yml
+
+# plugins
+- import_playbook: playbooks/jenkins/install_plugins/plugins.yml
+
+# app
+- import_playbook: app/ansible/play.yml
+
+# node 
+- import_playbook: playbooks/jenkins/node/config_credentials.yml
+- import_playbook: playbooks/jenkins/node/config_ssh_node.yml
+- import_playbook: playbooks/jenkins/node/create_node.yml
+- import_playbook: playbooks/jenkins/node/setup_node.yml
+
+# pipeline
+- import_playbook: playbooks/jenkins/pipeline/dotnet_acc_pipeline.yml
+#- import_playbook: playbooks/jenkins/pipeline/dotnet_prod_pipeline.yml
+
+# security
+- import_playbook: playbooks/jenkins/security/secure_credentials.yml
+
+
+
+
+
+
+
+

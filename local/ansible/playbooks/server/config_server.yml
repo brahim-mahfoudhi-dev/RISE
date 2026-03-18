@@ -1,0 +1,123 @@
+---
+- name: Generate SSH Key and Copy to Linode Server
+  hosts: localhost
+  become: yes
+  vars:
+    ssh_key_path: "/home/vagrant/.ssh/id_rsa"
+  tasks:
+    - name: Check if SSH private key already exists
+      ansible.builtin.stat:
+        path: "{{ ssh_key_path }}"
+      register: ssh_key_stat
+
+    - name: Generate Ed25519 SSH key pair
+      ansible.builtin.openssh_keypair:
+        path: "{{ ssh_key_path }}"
+        type: ed25519
+        force: no
+        size: 2048
+      when: not ssh_key_stat.stat.exists
+
+    - name: Set permissions for the private key
+      ansible.builtin.file:
+        path: "{{ ssh_key_path }}"
+        mode: "0600"
+      when: ssh_key_stat.stat.exists or not ssh_key_stat.stat.exists
+
+    - name: Change ownership of the private key
+      ansible.builtin.file:
+        path: /home/vagrant/.ssh/id_rsa
+        owner: vagrant
+        group: vagrant
+        mode: "0600"
+
+    - name: Change ownership of the public key
+      ansible.builtin.file:
+        path: /home/vagrant/.ssh/id_rsa.pub
+        owner: vagrant
+        group: vagrant
+        mode: "0600"
+
+    - name: Copy private key to servers
+      ansible.builtin.copy:
+        src: /home/vagrant/.ssh/id_rsa
+        dest: /root/.ssh/id_rsa
+        owner: root
+        group: root
+        mode: "0600"
+      delegate_to: "{{ item }}"
+      loop:
+        - buildserver
+        - app
+
+    - name: Add the public key to the remote Linode servers
+      ansible.builtin.authorized_key:
+        user: "root"
+        state: present
+        key: "{{ lookup('file', ssh_key_path + '.pub') }}"
+      delegate_to: "{{ item }}"
+      loop:
+        - buildserver
+        - app
+
+    - name: Display SSH public key (for reference)
+      debug:
+        msg: "SSH public key: {{ lookup('file', ssh_key_path + '.pub') }}"
+    
+    - name: Create vagrant user
+      user:
+        name: vagrant
+        state: present
+        shell: /bin/bash
+        home: /home/vagrant
+        create_home: yes
+        groups: sudo
+      delegate_to: "{{ item }}"
+      loop:
+        - buildserver
+        - app
+
+    - name: Copy files to servers
+      ansible.builtin.copy:
+        src: '/vagrant/ansible/playbooks/'
+        dest: '/vagrant/ansible/playbooks/'
+        owner: vagrant
+        group: vagrant
+        mode: "0600"
+        force: no
+      delegate_to: "{{ item }}"
+      loop:
+        - buildserver
+        - app
+    
+
+- name: Configure buildserver
+  hosts: buildserver, app
+  become: yes
+  vars:
+    ansible_ssh_private_key_file: "/home/vagrant/.ssh/id_rsa"
+  tasks:
+    - name: Ensure .ssh directory exists for vagrant
+      file:
+        path: "/home/vagrant/.ssh"
+        state: directory
+        mode: "0700"
+        owner: vagrant
+        group: vagrant
+
+    - name: Ensure known_hosts file exists for vagrant
+      file:
+        path: "/home/vagrant/.ssh/known_hosts"
+        state: touch
+        mode: "0644"
+        owner: vagrant
+        group:
+
+    - name: Add GitHub's SSH key to known_hosts
+      ansible.builtin.known_hosts:
+        name: github.com
+        key: "{{ lookup('pipe', 'ssh-keyscan github.com') }}"
+        path: "~/.ssh/known_hosts"
+
+
+

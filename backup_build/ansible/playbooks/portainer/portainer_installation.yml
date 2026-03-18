@@ -1,0 +1,26 @@
+---
+- name: Pull Portainer
+  hosts: buildserver
+  become: yes
+  vars_files:
+    - vars.yml
+  tasks: 
+    - name: Pull Portainer image
+      docker_image:
+        name: "{{ portainer_image }}"
+        tag: "{{ portainer_tag }}"
+        source: pull
+
+    - name: Create Portainer container
+      docker_container:
+        name: "{{ portainer_container_name }}"
+        image: "{{ portainer_image }}:{{ portainer_tag }}"
+        state: started
+        restart_policy: "{{ portainer_restart_policy }}"
+        published_ports: "{{ portainer_published_ports }}"
+        volumes: "{{ portainer_volumes }}"
+
+    - name: Create a Docker volume for Portainer data
+      docker_volume:
+        name: "{{ portainer_data_volume_name }}"
+        state: present

@@ -1,0 +1,53 @@
+- name: Create Jenkins dotnet pipeline
+  hosts: buildserver
+  gather_facts: no
+  vars_files:
+    - ../../vars/main.yml
+    - "{{ secrets_path }}"
+  tasks:
+    - name: Install pip
+      apt:
+        name: python3-pip
+        state: present
+      become: yes
+
+    - name: Install python-jenkins using pip3
+      pip:
+        name: python-jenkins
+        state: present
+        executable: pip3
+      become: true
+
+    - name: Scan and register Github fingerprints
+      command: "ssh-keyscan -t ed25519 github.com"
+      register: host_keys
+      become: yes
+
+    - name: Add Github fingerprints keys to known_hosts
+      lineinfile:
+        path: "/var/lib/jenkins/.ssh/known_hosts"
+        line: "{{ item }}"
+      with_items: "{{ host_keys.stdout_lines }}"
+      become: yes
+    
+    - name: Add Github fingerprints keys to known_hosts
+      lineinfile:
+        path: "/home/vagrant/.ssh/known_hosts"
+        line: "{{ item }}"
+      with_items: "{{ host_keys.stdout_lines }}"
+      become: yes
+
+    - name: Read the config.xml file
+      slurp:
+        src: "{{ config_file }}"
+      register: config_xml
+
+    - name: Create Jenkins pipeline job
+      jenkins_job:
+        name: "dotnet_pipeline"
+        config: "{{ config_xml.content | b64decode }}"
+        state: present
+        url: "{{ jenkins_url }}"
+        user: "{{ jenkins_username }}"
+        password: "{{ jenkins_password }}"
+

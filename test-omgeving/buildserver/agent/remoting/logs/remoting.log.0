@@ -1,0 +1,29 @@
+Oct 29, 2024 7:35:21 PM hudson.remoting.Launcher createEngine
+INFO: Setting up agent: app
+Oct 29, 2024 7:35:21 PM hudson.remoting.Engine startEngine
+INFO: Using Remoting version: 3248.3250.v3277a_8e88c9b_
+Oct 29, 2024 7:35:21 PM org.jenkinsci.remoting.engine.WorkDirManager initializeWorkDir
+INFO: Using /vagrant/agent/remoting as a remoting work directory
+Oct 29, 2024 7:35:21 PM hudson.remoting.Launcher$CuiListener status
+INFO: Locating server among [http://172.16.128.100:8080/]
+Oct 29, 2024 7:35:22 PM org.jenkinsci.remoting.engine.JnlpAgentEndpointResolver resolve
+INFO: Remoting server accepts the following protocols: [JNLP4-connect, Ping]
+Oct 29, 2024 7:35:22 PM hudson.remoting.Launcher$CuiListener status
+INFO: Agent discovery successful
+  Agent address: 172.16.128.100
+  Agent port:    50000
+  Identity:      c1:99:05:3c:d7:df:b2:df:e1:80:f3:a2:e6:7b:8f:b1
+Oct 29, 2024 7:35:22 PM hudson.remoting.Launcher$CuiListener status
+INFO: Handshaking
+Oct 29, 2024 7:35:22 PM hudson.remoting.Launcher$CuiListener status
+INFO: Connecting to 172.16.128.100:50000
+Oct 29, 2024 7:35:22 PM hudson.remoting.Launcher$CuiListener status
+INFO: Server reports protocol JNLP4-connect-proxy not supported, skipping
+Oct 29, 2024 7:35:22 PM hudson.remoting.Launcher$CuiListener status
+INFO: Trying protocol: JNLP4-connect
+Oct 29, 2024 7:35:27 PM org.jenkinsci.remoting.protocol.impl.BIONetworkLayer$Reader run
+INFO: Waiting for ProtocolStack to start.
+Oct 29, 2024 7:35:27 PM hudson.remoting.Launcher$CuiListener status
+INFO: Remote identity confirmed: c1:99:05:3c:d7:df:b2:df:e1:80:f3:a2:e6:7b:8f:b1
+Oct 29, 2024 7:35:28 PM hudson.remoting.Launcher$CuiListener status
+INFO: Connected

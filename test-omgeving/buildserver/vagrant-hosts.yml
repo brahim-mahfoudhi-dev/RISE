@@ -1,0 +1,21 @@
+# vagrant_hosts.yml
+#
+# List of hosts to be created by Vagrant. For more information about the
+# possible settings, see the documentation at
+# <https://github.com/bertvv/ansible-skeleton>
+---
+
+- name: buildserver
+  ip: 172.16.128.100
+  netmask: 255.255.0.0
+  box: bento/ubuntu-22.04
+
+- name: app
+  ip: 172.16.128.101
+  netmask: 255.255.0.0
+  box: bento/ubuntu-22.04
+
+- name: control
+  ip: 172.16.128.253
+  netmask: 255.255.0.0
+  box: bento/almalinux-9

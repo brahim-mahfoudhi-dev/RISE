@@ -1,0 +1,19 @@
+all:
+  vars:
+    ansible_user: vagrant
+    ansible_ssh_pass: vagrant
+    ansible_become: true
+  children:
+    servers:
+      hosts:
+        buildserver:
+          ansible_host: 172.16.128.100
+          # ansible_user: root
+          # ansible_ssh_private_key_file: "/home/vagrant/.ssh/id_rsa"
+        app:
+          ansible_host: 172.16.128.101
+   # jenkins:
+   #   hosts:
+   #     172.104.236.249:
+   #       ansible_user: root
+   #       ansible_ssh_private_key_file: "/vagrant/ansible/.ssh/id_rsa.pub"

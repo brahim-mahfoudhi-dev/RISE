@@ -1,0 +1,50 @@
+- name: Setup Jenkins Node
+  hosts: app
+  become: yes
+  tasks:
+    - name: Update and install Java
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
+    - name: Ensure necessary directories exist
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: "0775"
+      loop:
+        - { path: "/var/lib/jenkins/" }
+        - { path: "/var/lib/jenkins/agent/" }
+        - { path: "/var/lib/jenkins/artifacts/" }
+        - { path: "/var/lib/jenkins/.ssh" }
+        - { path: "/var/lib/jenkins/.dotnet" }
+        - { path: "/home/jenkins" }
+        - { path: "/home/jenkins/.dotnet/" }
+        - { path: "/home/jenkins/.dotnet/tools" }
+
+    - name: Copy SSH files to .ssh directory
+      copy:
+        src: /vagrant/ansible/playbooks/jenkins/files/ssh/
+        dest: /var/lib/jenkins/.ssh
+        owner: jenkins
+        group: jenkins
+        mode: "0644"
+
+    - name: Check installed .NET tools
+      command: dotnet tool list --tool-path /home/jenkins/.dotnet/tools
+      register: dotnet_tools
+      changed_when: false
+
+    - name: Install .NET tools if not already installed
+      command: dotnet tool install {{ item.name }} --version {{ item.version }} --tool-path /home/jenkins/.dotnet/tools
+      environment:
+        ACCEPT_EULA: Y
+      loop:
+        - { name: "trx2junit", version: "2.1.0" }
+        - { name: "dotnet-reportgenerator-globaltool", version: "5.3.11" }
+      when: item.name not in dotnet_tools.stdout
+      register: install_tools
+      failed_when: install_tools.rc != 0

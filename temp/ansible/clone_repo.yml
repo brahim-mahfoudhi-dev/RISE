@@ -1,0 +1,27 @@
+---
+
+- name: cicd-sample repository
+  hosts: dockerlab
+  become: yes
+  tasks:
+    - name: Create a directory
+      file:
+        path: /vagrant/cicd
+        state: directory
+        mode: '0755'
+
+
+    - name: Clone cicd-sample repository
+      git:
+        repo: https://github.com/Brahim-Mahfoudhi/cicd-sample.git
+        dest: /vagrant/cicd
+        version: main
+        update: yes
+        force: yes
+        
+    - name: Ensure repository is present
+      git:
+        repo: https://github.com/Brahim-Mahfoudhi/cicd-sample.git
+        dest: /vagrant/cicd
+        version: main  
+

@@ -1,0 +1,38 @@
+---
+- name: Create Jenkins User
+  hosts: buildserver
+  become: yes
+  vars_files:
+    - ../../vars/main.yml
+    - "{{ secrets_path }}"
+
+  tasks:
+    - name: Ensure Jenkins is running
+      ansible.builtin.service:
+        name: jenkins
+        state: started
+
+    - name: Ensure init.groovy.d directory exists
+      ansible.builtin.file:
+        path: /var/lib/jenkins/init.groovy.d
+        state: directory
+        mode: '0755'
+        owner: jenkins
+        group: jenkins
+
+    - name: Set username and password
+      ansible.builtin.template:
+        src: "../files/users/security.groovy"
+        dest: /var/lib/jenkins/init.groovy.d/basic-security.groovy
+      vars:
+        JENKINS_USERNAME: "{{ jenkins_username }}"
+        JENKINS_PASSWORD: "{{ jenkins_password }}"
+      notify: Restart Jenkins
+
+  handlers:
+    - name: Restart Jenkins
+      ansible.builtin.service:
+        name: jenkins
+        state: restarted
+      
+  

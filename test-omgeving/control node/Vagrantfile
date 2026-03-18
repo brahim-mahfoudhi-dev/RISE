@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "almalinux/9"
+
+  config.vm.define "jarvis" do |jarvis|
+    jarvis.vm.hostname = "jarvis"
+
+    jarvis.vm.provider "virtualbox" do |box|
+      box.memory = "2048"
+      box.cpus = 1
+    end
+
+    jarvis.vm.provision "file", source: "./secretKeyJarvis", destination: "/home/vagrant/.ssh/id_rsa"
+
+    jarvis.vm.provision "shell", inline: <<-SHELL
+      echo -e "\\033[0;32mInstalling Ansible\\033[0m"
+      sudo dnf install -y epel-release
+      sudo dnf install -y ansible
+
+      echo -e "\\033[0;32mConfiguring SSH settings\\033[0m"  
+      sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#*MaxAuthTries.*/MaxAuthTries 5/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#*ClientAliveInterval.*/ClientAliveInterval 180/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#*ClientAliveCountMax.*/ClientAliveCountMax 3/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#*PermitEmptyPasswords.*/PermitEmptyPasswords no/' /etc/ssh/sshd_config
+
+      sudo systemctl restart sshd
+
+      echo -e "\\033[0;32mImporting Ansible key\\033[0m"
+      sudo mkdir -p /home/vagrant/.ssh
+      sudo chmod 700 /home/vagrant/.ssh
+      sudo chmod 600 /home/vagrant/.ssh/id_rsa
+      sudo chown -R vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+  end
+
+  config.ssh.insert_key = true
+end
+

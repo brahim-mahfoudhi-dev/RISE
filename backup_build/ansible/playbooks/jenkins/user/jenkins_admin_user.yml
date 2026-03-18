@@ -1,0 +1,51 @@
+
+---
+- name: Manage Jenkins Admin User
+  hosts: buildserver
+  become: true  # If needed, run the playbook with elevated privileges
+  vars_files:
+    - ../../vars/main.yml
+  tasks:
+    - name: Load secrets from file
+      include_vars:
+        file: "{{ vault_path }}"
+
+    - name: Create or update Jenkins admin user
+      jenkins_script:
+        script: |
+          import hudson.security.*
+          import jenkins.model.*
+          import hudson.security.csrf.DefaultCrumbIssuer
+
+          def instance = Jenkins.getInstance()
+          def hudsonRealm = new HudsonPrivateSecurityRealm(false)
+          def users = hudsonRealm.getAllUsers()
+          instance.setCrumbIssuer(new DefaultCrumbIssuer(true))
+          instance.save()
+
+          // Collect existing usernames
+          def existingUsers = users.collect { it.toString() }
+          println "Existing users: ${existingUsers.join(', ')}"  // Debugging existing users
+
+          if ("{{ jenkins_username }}" in existingUsers) {
+              println "Admin user already exists - updating password"
+              def user = hudson.model.User.get('{{ jenkins_username }}')
+              user.setPassword('{{ jenkins_password }}')
+              user.save()
+          } else {
+              println "--> Creating local admin user"
+              hudsonRealm.createAccount('{{ jenkins_username }}', '{{ jenkins_password }}')
+              instance.setSecurityRealm(hudsonRealm)
+
+              def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+              instance.setAuthorizationStrategy(strategy)
+              instance.save()
+          }
+        url: "{{ jenkins_url }}"
+        user: "{{ jenkins_username }}"
+        password: "{{ jenkins_password }}"
+      register: jenkins_result
+
+    - name: Display Jenkins result
+      debug:
+        var: jenkins_result

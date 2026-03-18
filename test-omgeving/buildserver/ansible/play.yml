@@ -1,0 +1,14 @@
+# play.yml
+---
+
+# Import the SSH initialization tasks
+- import_playbook: playbooks/ssh/initialize_known_hosts.yml
+
+# Deploy Jenkins container
+- import_playbook: playbooks/jenkins/install/install_jenkins.yml
+
+# user
+- import_playbook: playbooks/jenkins/user/jenkins_admin_user.yml
+
+# plugins
+- import_playbook: playbooks/jenkins/install_plugins/plugins.yml

@@ -1,0 +1,34 @@
+- name: Create Jenkins dotnet pipeline
+  hosts: buildserver
+  gather_facts: no
+  vars_files:
+    - ../../vars/main.yml
+    - "{{ secrets_path }}"
+  tasks:
+    - name: Install pip
+      apt:
+        name: python3-pip
+        state: present
+      become: yes
+
+    - name: Install python-jenkins using pip3
+      pip:
+        name: python-jenkins
+        state: present
+        executable: pip3
+      become: true
+
+    - name: Read the config.xml file
+      slurp:
+        src: "{{ config_file }}"
+      register: config_xml
+
+    - name: Create Jenkins pipeline job
+      jenkins_job:
+        name: "dotnet_test_pipeline"
+        config: "{{ config_xml.content | b64decode }}"
+        state: present
+        url: "{{ jenkins_url }}"
+        user: "{{ jenkins_username }}"
+        password: "{{ jenkins_password }}"
+

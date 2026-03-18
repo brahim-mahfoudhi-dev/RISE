@@ -1,0 +1,35 @@
+---
+
+- name: Set up Jenkins secrets
+  hosts: buildserver
+  vars_files:
+    - ../../vars/main.yml
+  tasks:
+    - name: Load secrets from file
+      include_vars:
+        file: "{{secrets_path}}"    
+
+    - name: Create a vault password file in /tmp
+      copy:
+        dest: /tmp/vault_password.txt
+        content: "rise"
+        mode: "0600"
+
+    - name: Encrypt Jenkins username
+      command: ansible-vault encrypt_string {{ jenkins_username }} --name 'jenkins_username' --vault-password-file /tmp/vault_password.txt
+      register: encrypted_username
+
+    - name: Encrypt Jenkins password
+      command: ansible-vault encrypt_string {{ jenkins_password }} --name 'jenkins_password' --vault-password-file /tmp/vault_password.txt
+      register: encrypted_password
+
+    - name: Save encrypted variables to a vault file
+      copy:
+        dest: ./vault.yml
+        content: |
+          {{ encrypted_username.stdout }}
+          {{ encrypted_password.stdout }}
+
+    - name: Display success message
+      debug:
+        msg: "Vault setup complete. Password stored in /tmp/vault_password.txt and encrypted variables saved in vault.yml."

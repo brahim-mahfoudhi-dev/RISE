@@ -1,0 +1,17 @@
+# site.yml
+---
+# SSH
+- import_playbook: playbooks/retrieve_SSH_fingerprints.yml
+
+# Installation software
+- import_playbook: playbooks/install_software.yml
+
+# Clone Github repository
+- import_playbook: playbooks/clone_repo.yml
+
+# Install portainer
+# - import_playbook: playbooks/pull_portainer.yml
+
+# Run app
+- import_playbook: playbooks/run_app.yml
+

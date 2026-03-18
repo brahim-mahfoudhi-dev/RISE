@@ -1,0 +1,5 @@
+# group_vars/all.yml
+# Variables visible to all nodes
+---
+my_group: dockerlab
+

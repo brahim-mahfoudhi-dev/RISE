@@ -1,0 +1,49 @@
+---
+- name: Create Jenkins Node
+  hosts: buildserver
+  become: yes
+  vars_files:
+    - ../../vars/main.yml
+    - "{{ secrets_path }}"
+    - "{{ vault_path }}"
+  tasks:
+    - name: Update and install Java
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - ssh
+          - git
+        state: present
+    
+    - name: Restart Jenkins
+      ansible.builtin.systemd:
+        name: jenkins
+        state: restarted
+
+    - name: Wait for Jenkins to be fully available
+      wait_for:
+        host: localhost
+        port: 8080
+        delay: 10
+        timeout: 300
+        state: started
+
+    - name: Add Jenkins node using Groovy script
+      community.general.jenkins_script:
+        url: "{{ jenkins_url }}"
+        user: "{{ jenkins_username }}"
+        password: "{{ jenkins_password }}"
+        script: "{{ lookup('template', '/vagrant/ansible/playbooks/jenkins/files/node/create-jenkins-node.groovy') }}"
+      register: jenkins_node_result
+
+  #  - name: Wait for the node to come online
+  #    wait_for:
+  #      host: "{{ node_ip }}"
+  #      port: "{{ jenkins_ssh_port | default(22) }}"
+  #      delay: 10
+  #      timeout: 300

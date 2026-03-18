@@ -1,0 +1,15 @@
+---
+- name: Run .NET Demo App in Docker
+  hosts: app
+  tasks:
+    - name: Run the dotnet-demoapp container
+      ansible.builtin.docker_container:
+        name: dotnet-demoapp
+        image: ghcr.io/benc-uk/dotnet-demoapp:latest
+        state: started
+        recreate: yes
+        ports:
+          - "5000:5000"
+        detach: false
+        interactive: true
+        auto_remove: true
